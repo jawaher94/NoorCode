@@ -1,0 +1,189 @@
+package org.example;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+public class ImageProcessor {
+    final String[] allowedExtensions = {"jpg", "jpeg", "png", "gif", "bmp"};
+    private final String imagePath;
+    private final String outputDirectory = "imageProcessingPractice/processed_images";
+
+    public ImageProcessor(String imagePath) {
+        boolean validExtension = false;
+        for (String extension : allowedExtensions) {
+            if (imagePath.toLowerCase().endsWith("." + extension)) {
+                validExtension = true;
+                break;
+            }
+        }
+        if (validExtension) {
+            this.imagePath = imagePath;
+        } else {
+            throw new IllegalArgumentException("Invalid file extension. Only JPG, JPEG, PNG, GIF, and BMP are allowed.");
+        }
+
+        File dir = new File(outputDirectory);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
+    public void rotateImageByDegree(int degree) {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(imagePath));
+
+            double radians = Math.toRadians(degree);
+            int width = originalImage.getWidth();
+            int height = originalImage.getHeight();
+            int newWidth = (int) (width * Math.abs(Math.cos(radians)) + height * Math.abs(Math.sin(radians)));
+            int newHeight = (int) (width * Math.abs(Math.sin(radians)) + height * Math.abs(Math.cos(radians)));
+
+            BufferedImage rotatedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
+
+            AffineTransform transform = new AffineTransform();
+            transform.translate(newWidth / 2, newHeight / 2);
+            transform.rotate(radians);
+            transform.translate(-width / 2, -height / 2);
+
+            Graphics2D g2d = rotatedImage.createGraphics();
+            g2d.setTransform(transform);
+            g2d.drawImage(originalImage, 0, 0, null);
+            g2d.dispose();
+
+            String fileExtension = imagePath.substring(imagePath.lastIndexOf('.') + 1).toLowerCase();
+
+            String outputImagePath = outputDirectory + "/rotated." + fileExtension;
+            ImageIO.write(rotatedImage, fileExtension, new File(outputImagePath));
+
+            System.out.println("Image rotated and saved as: " + outputImagePath);
+
+        } catch (IOException e) {
+            System.err.println("Error processing the image: " + e.getMessage());
+        }
+    }
+
+    public void mirrorImage() {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(imagePath));
+
+            AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+            tx.translate(-originalImage.getWidth(), 0);
+            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+
+            BufferedImage mirroredImage = op.filter(originalImage, null);
+
+            String fileExtension = imagePath.substring(imagePath.lastIndexOf('.') + 1).toLowerCase();
+
+            String outputImagePath = outputDirectory + "/mirrored." + fileExtension;
+            ImageIO.write(mirroredImage, fileExtension, new File(outputImagePath));
+
+            System.out.println("Image mirrored and saved as: " + outputImagePath);
+
+        } catch (IOException e) {
+            System.err.println("Error processing the image: " + e.getMessage());
+        }
+    }
+
+    public Dimension getImageResolution() {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(imagePath));
+            int width = originalImage.getWidth();
+            int height = originalImage.getHeight();
+            return new Dimension(width, height);
+        } catch (IOException e) {
+            System.err.println("Error reading the image: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public void resizeImage(int newWidth, int newHeight) {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(imagePath));
+            BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
+            Graphics2D g2d = resizedImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+            g2d.dispose();
+
+            String fileExtension = imagePath.substring(imagePath.lastIndexOf('.') + 1).toLowerCase();
+
+            String outputImagePath = outputDirectory + "/resized." + fileExtension;
+            ImageIO.write(resizedImage, fileExtension, new File(outputImagePath));
+            System.out.println("Image resized and saved as: " + outputImagePath);
+
+        } catch (IOException e) {
+            System.err.println("Error processing the image: " + e.getMessage());
+        }
+    }
+
+    public void pixelateImage(int newPixelWidth, int newPixelHeight) {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(imagePath));
+            int width = originalImage.getWidth();
+            int height = originalImage.getHeight();
+
+            BufferedImage tempImage = new BufferedImage(newPixelWidth, newPixelHeight, originalImage.getType());
+            Graphics2D g2d = tempImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.drawImage(originalImage, 0, 0, newPixelWidth, newPixelHeight, null);
+            g2d.dispose();
+
+            BufferedImage pixelatedImage = new BufferedImage(width, height, originalImage.getType());
+            g2d = pixelatedImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2d.drawImage(tempImage, 0, 0, width, height, null);
+            g2d.dispose();
+
+            String fileExtension = imagePath.substring(imagePath.lastIndexOf('.') + 1).toLowerCase();
+
+            String outputImagePath = outputDirectory + "/pixelated." + fileExtension;
+            ImageIO.write(pixelatedImage, fileExtension, new File(outputImagePath));
+
+            System.out.println("Image pixelated and saved as: " + outputImagePath);
+
+        } catch (IOException e) {
+            System.err.println("Error processing the image: " + e.getMessage());
+        }
+    }
+
+    public void adjustBrightness(double factor) {
+        try {
+            BufferedImage originalImage = ImageIO.read(new File(imagePath));
+
+            BufferedImage adjustedImage = new BufferedImage(originalImage.getWidth(), originalImage.getHeight(), originalImage.getType());
+
+            for (int y = 0; y < originalImage.getHeight(); y++) {
+                for (int x = 0; x < originalImage.getWidth(); x++) {
+                    Color color = new Color(originalImage.getRGB(x, y));
+
+                    int r = (int) (color.getRed() + factor);
+                    int g = (int) (color.getGreen() + factor);
+                    int b = (int) (color.getBlue() + factor);
+
+                    // Clamp values to be within [0, 255]
+                    r = Math.min(Math.max(r, 0), 255);
+                    g = Math.min(Math.max(g, 0), 255);
+                    b = Math.min(Math.max(b, 0), 255);
+
+                    adjustedImage.setRGB(x, y, new Color(r, g, b).getRGB());
+                }
+            }
+
+            String fileExtension = imagePath.substring(imagePath.lastIndexOf('.') + 1).toLowerCase();
+
+            String outputImagePath = outputDirectory + "/brightness_adjusted." + fileExtension;
+            ImageIO.write(adjustedImage, fileExtension, new File(outputImagePath));
+
+            System.out.println("Image brightness adjusted and saved as: " + outputImagePath);
+
+        } catch (IOException e) {
+            System.err.println("Error processing the image: " + e.getMessage());
+        }
+    }
+}
