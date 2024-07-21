@@ -1,0 +1,104 @@
+package org.example;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+public class ImageComparison extends JFrame {
+    private final int frameWidth = 800;
+    private final int frameHeight = 600;
+    private JLabel topImageLabel;
+    private BufferedImage resizedOriginalImage;
+    private BufferedImage darkenedImage;
+
+    public ImageComparison(String imagePath) {
+        setTitle("Image Comparison");
+        setSize(frameWidth, frameHeight);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setResizable(false);
+
+        BufferedImage originalImage = loadImage(imagePath);
+        resizedOriginalImage = resizeImage(originalImage, frameWidth, frameHeight);
+
+        darkenedImage = makeImageDarker(resizedOriginalImage);
+
+        JLabel bottomImageLabel = new JLabel(new ImageIcon(resizedOriginalImage));
+        add(bottomImageLabel);
+
+        topImageLabel = new JLabel(new ImageIcon(darkenedImage));
+        topImageLabel.setSize(frameWidth, frameHeight);
+        topImageLabel.setLocation(0, 0);
+        topImageLabel.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                adjustTopImage(e.getX());
+            }
+        });
+        topImageLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                resetTopImage();
+            }
+        });
+        add(topImageLabel);
+
+        setVisible(true);
+    }
+
+    private BufferedImage loadImage(String imagePath) {
+        try {
+            return ImageIO.read(new File(imagePath));
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Image could not be loaded: " + imagePath, "Image Load Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+            return null;
+        }
+    }
+
+    private BufferedImage resizeImage(BufferedImage originalImage, int width, int height) {
+        Image tmp = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = resized.createGraphics();
+        g2d.drawImage(tmp, 0, 0, null);
+        g2d.dispose();
+        return resized;
+    }
+
+    private BufferedImage makeImageDarker(BufferedImage image) {
+        BufferedImage darkened = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                int rgba = image.getRGB(x, y);
+                Color col = new Color(rgba, true);
+                int red = (int) (col.getRed() * 0.7);
+                int green = (int) (col.getGreen() * 0.7);
+                int blue = (int) (col.getBlue() * 0.7);
+                col = new Color(red, green, blue, col.getAlpha());
+                darkened.setRGB(x, y, col.getRGB());
+            }
+        }
+        return darkened;
+    }
+
+    private void adjustTopImage(int x) {
+        if (x < 0 || x > frameWidth) return;
+        BufferedImage adjustedImage = new BufferedImage(frameWidth, frameHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = adjustedImage.createGraphics();
+        g2d.drawImage(resizedOriginalImage.getSubimage(0, 0, x, frameHeight), 0, 0, null);
+        g2d.drawImage(darkenedImage.getSubimage(x, 0, frameWidth - x, frameHeight), x, 0, null);
+        g2d.dispose();
+        topImageLabel.setIcon(new ImageIcon(adjustedImage));
+        topImageLabel.repaint();
+    }
+    private void resetTopImage() {
+        topImageLabel.setIcon(new ImageIcon(darkenedImage));
+        topImageLabel.repaint();
+    }
+
+}
