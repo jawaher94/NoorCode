@@ -1,0 +1,20 @@
+package org.example;
+
+import netscape.javascript.JSObject;
+
+public class Main {
+    public static void main(String[] args) {
+        String imagePath="כתובת של תמונה";
+        //System.out.println(ApiManager.getApiContent("https://jsonplaceholder.typicode.com/posts/1"));
+        String postContent = "{ \"title\": \"foo\", \"body\": \"bar\", \"userId\": 1 }";
+        //ApiManager.postContentToApi("https://jsonplaceholder.typicode.com/posts",postContent);
+        //ImageProcessor imageProcessor=new ImageProcessor(imagePath);
+        //imageProcessor.pixelateImage(144,80);
+        //imageProcessor.rotateImageByDegree(400);
+        //imageProcessor.adjustBrightness(-34);
+        //imageProcessor.resizeImage(400,600);
+        //imageProcessor.mirrorImage();
+        //new ImageComparison(imagePath);
+        //System.out.println(imageProcessor.getImageResolution());
+    }
+}
